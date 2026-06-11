@@ -1,4 +1,6 @@
+import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import {
   apiError,
   notFound,
@@ -151,4 +153,37 @@ export async function PATCH(
   if (error) return apiError('UPDATE_FAILED', error.message, 500);
   if (!data) return notFound('Project not found');
   return ok(data);
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return unauthorized();
+
+  // RLS hides already-deleted (and non-owned) rows, so a missing row here
+  // means "not found" — including a second DELETE on the same id.
+  const { data: existing } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('id', id)
+    .maybeSingle();
+  if (!existing) return notFound('Project not found');
+
+  // Ownership is verified above via the user-scoped client. The soft-delete
+  // itself must use the service role: the spec's RLS policy forbids the owner's
+  // own session from setting status='deleted' (the new row fails the policy's
+  // `status != 'deleted'` predicate).
+  const { error } = await createAdminClient()
+    .from('projects')
+    .update({ status: 'deleted' })
+    .eq('id', id);
+  if (error) return apiError('DELETE_FAILED', error.message, 500);
+
+  return NextResponse.json({ success: true });
 }
