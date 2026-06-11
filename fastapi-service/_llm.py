@@ -42,10 +42,16 @@ async def stream_completion(
 
 
 async def _mock_stream(system: str, user: str) -> AsyncIterator[str]:
+    # Includes a checklist so the tasks-approval path (markdown parsing) works
+    # without a real key.
     sample = (
         "# Generated draft (mock)\n\n"
         "ANTHROPIC_API_KEY is not set, so this is a canned stream that exercises "
-        "the SSE pipeline. Set the key in fastapi-service/.env for real output.\n"
+        "the SSE pipeline. Set the key in fastapi-service/.env for real output.\n\n"
+        "## Section A\n"
+        "- [ ] First task\n"
+        "- [ ] Second task\n"
+        "- [ ] Third task\n"
     )
     for token in sample.split(" "):
         yield token + " "
