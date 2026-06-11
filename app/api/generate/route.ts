@@ -47,7 +47,7 @@ export async function GET(request: Request) {
   // Pre-flight: project must exist (RLS hides others' / deleted).
   const { data: project } = await supabase
     .from('projects')
-    .select('id, stage, gate_prd, gate_spec, prompt_language')
+    .select('id, name, description, stage, gate_prd, gate_spec, prompt_language')
     .eq('id', projectId)
     .maybeSingle();
   if (!project) return notFound('Project not found');
@@ -98,6 +98,9 @@ export async function GET(request: Request) {
     .eq('project_id', projectId)
     .eq('approved', true);
   const context: Record<string, string> = {};
+  // The stage-1 brief (project name + description) seeds PRD generation.
+  if (project.name) context.project_name = project.name;
+  if (project.description) context.brief = project.description;
   for (const a of approved ?? []) context[a.type] = a.content;
 
   const fastapiUrl = process.env.FASTAPI_BASE_URL ?? 'http://localhost:8000';

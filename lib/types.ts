@@ -51,6 +51,7 @@ export interface Task {
 }
 
 export const STAGE_COUNT = 6;
+export const DESCRIPTION_MAX = 20000;
 export const GATE_BY_STAGE: Record<number, keyof Project> = {
   2: 'gate_prd',
   3: 'gate_spec',

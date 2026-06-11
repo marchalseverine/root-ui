@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button, Input, Modal } from '@/components/ui';
 import { apiFetch } from '@/lib/api/client';
-import type { Locale, Project } from '@/lib/types';
+import { DESCRIPTION_MAX, type Locale, type Project } from '@/lib/types';
 
 const LOCALES: Locale[] = ['en', 'fr', 'es'];
 
@@ -71,7 +71,7 @@ export function NewProjectModal({
           <textarea
             id="description"
             name="description"
-            maxLength={500}
+            maxLength={DESCRIPTION_MAX}
             rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}

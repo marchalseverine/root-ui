@@ -8,6 +8,7 @@ import { useStreamingGeneration } from '@/hooks/useStreamingGeneration';
 import { useTaskList } from '@/hooks/useTaskList';
 import type { ArtifactType, Project } from '@/lib/types';
 import { StreamingOutput } from './StreamingOutput';
+import { BriefEditor } from './BriefEditor';
 
 function GenerationPhase({
   project,
@@ -238,7 +239,12 @@ export function StagePanel({
   onAdvance: () => void;
 }) {
   if (!project.gate_prd)
-    return <GenerationPhase project={project} type="prd" onAdvance={onAdvance} />;
+    return (
+      <div className="flex flex-col gap-6">
+        <BriefEditor project={project} onSaved={onAdvance} />
+        <GenerationPhase project={project} type="prd" onAdvance={onAdvance} />
+      </div>
+    );
   if (!project.gate_spec)
     return <GenerationPhase project={project} type="spec" onAdvance={onAdvance} />;
   if (!project.gate_tasks)

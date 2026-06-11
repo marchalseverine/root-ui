@@ -117,8 +117,8 @@ export async function PATCH(
     if (body.description === null) update.description = null;
     else if (typeof body.description !== 'string')
       fields.description = 'Description must be a string';
-    else if (body.description.length > 500)
-      fields.description = 'Description must be at most 500 characters';
+    else if (body.description.length > 20000)
+      fields.description = 'Description must be at most 20000 characters';
     else update.description = body.description;
   }
   if ('prompt_language' in body) {
