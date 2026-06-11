@@ -31,6 +31,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
+# supabase cli
+supabase/.temp/
+supabase/.branches/
+
 # python / fastapi-service
 fastapi-service/.env
 fastapi-service/__pycache__/
