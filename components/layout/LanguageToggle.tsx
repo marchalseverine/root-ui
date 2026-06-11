@@ -1,16 +1,15 @@
-export const LOCALES = ['en', 'fr', 'es'] as const;
-export type Locale = (typeof LOCALES)[number];
+'use client';
 
-export interface LanguageToggleProps {
-  /** Currently active locale (visual only for now). */
-  locale?: Locale;
-}
+import { useI18n, type Locale } from '@/hooks/useI18n';
+import { useStreaming } from '@/context/StreamingContext';
 
-/**
- * Static EN/FR/ES pills. Renders only — wiring (locale switch + persistence)
- * lands in T10.
- */
-export function LanguageToggle({ locale = 'en' }: LanguageToggleProps) {
+export const LOCALES: readonly Locale[] = ['en', 'fr', 'es'];
+
+/** EN/FR/ES pills wired to the locale switch. Disabled while streaming. */
+export function LanguageToggle() {
+  const { locale, changeLanguage } = useI18n();
+  const { streamingActive } = useStreaming();
+
   return (
     <div
       role="group"
@@ -22,7 +21,9 @@ export function LanguageToggle({ locale = 'en' }: LanguageToggleProps) {
           key={l}
           type="button"
           aria-pressed={l === locale}
-          className={`rounded-sm px-2 py-1 font-body text-xs font-semibold uppercase tracking-wide transition-colors ${
+          disabled={streamingActive}
+          onClick={() => changeLanguage(l)}
+          className={`rounded-sm px-2 py-1 font-body text-xs font-semibold uppercase tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
             l === locale
               ? 'bg-coral text-black'
               : 'text-gray-400 hover:text-white'
