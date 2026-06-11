@@ -1,0 +1,6 @@
+.next
+node_modules
+docs
+fastapi-service
+*.lock
+package-lock.json

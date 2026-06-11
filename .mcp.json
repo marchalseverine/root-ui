@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "root-pipeline": {
+      "command": "/Users/severinemarchal/Documents/root_pipeline/.venv/bin/python",
+      "args": ["/Users/severinemarchal/Documents/root_pipeline/mcp_server/server.py"]
+    }
+  }
+}
