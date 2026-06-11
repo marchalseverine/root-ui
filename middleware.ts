@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
   if (!user && (isProtectedApi || isProtectedPage)) {
     if (isProtectedApi) {
       return NextResponse.json(
-        { error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
+        { error: 'Authentication required', code: 'UNAUTHORIZED' },
         { status: 401 }
       );
     }
