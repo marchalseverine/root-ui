@@ -9,6 +9,7 @@ import { useTaskList } from '@/hooks/useTaskList';
 import type { ArtifactType, Project } from '@/lib/types';
 import { StreamingOutput } from './StreamingOutput';
 import { BriefEditor } from './BriefEditor';
+import { PromptTemplateField } from './PromptTemplateField';
 
 function GenerationPhase({
   project,
@@ -45,6 +46,7 @@ function GenerationPhase({
 
   return (
     <div className="flex flex-col gap-4">
+      <PromptTemplateField type={type} />
       {status === 'idle' ? (
         <Button onClick={start}>{tg('generate', { type: type.toUpperCase() })}</Button>
       ) : (
