@@ -1,8 +1,10 @@
+import { promises as fs } from 'fs';
+import path from 'path';
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { apiError, unauthorized, validationError } from '@/lib/api/http';
 
-const FASTAPI = process.env.FASTAPI_BASE_URL ?? 'http://localhost:8000';
+const PROMPTS_DIR = path.join(process.cwd(), 'fastapi-service', 'prompts');
 const TYPES = ['prd', 'spec', 'tasks'];
 
 export async function PUT(
@@ -25,18 +27,13 @@ export async function PUT(
   }
 
   try {
-    const res = await fetch(`${FASTAPI}/internal/prompts/${type}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.INTERNAL_API_SECRET}`,
-      },
-      body: JSON.stringify({ content: body.content }),
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!res.ok) throw new Error(`FastAPI ${res.status}`);
-    return NextResponse.json({ data: await res.json() });
-  } catch {
-    return apiError('FASTAPI_UNAVAILABLE', 'Prompt service unavailable', 502);
+    await fs.writeFile(path.join(PROMPTS_DIR, `${type}.txt`), body.content, 'utf-8');
+    return NextResponse.json({ data: { ok: true, type } });
+  } catch (e) {
+    return apiError(
+      'PROMPTS_WRITE_FAILED',
+      e instanceof Error ? e.message : 'Could not write prompt',
+      500
+    );
   }
 }
