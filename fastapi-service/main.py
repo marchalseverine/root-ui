@@ -23,6 +23,7 @@ app = FastAPI(title="root-ui generation service")
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 VALID_TYPES = {"prd", "spec", "tasks"}
+PROMPT_TYPES = ("prd", "spec", "tasks")
 
 
 def _expected_auth() -> str | None:
@@ -102,6 +103,27 @@ async def generate(req: GenerateRequest, authorization: str | None = Header(defa
         yield f"event: done\ndata: {done}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+class PromptUpdate(BaseModel):
+    content: str
+
+
+@app.get("/internal/prompts")
+async def get_prompts() -> dict:
+    out: dict[str, str] = {}
+    for t in PROMPT_TYPES:
+        path = PROMPTS_DIR / f"{t}.txt"
+        out[t] = path.read_text(encoding="utf-8") if path.exists() else ""
+    return out
+
+
+@app.put("/internal/prompts/{prompt_type}")
+async def put_prompt(prompt_type: str, body: PromptUpdate) -> dict:
+    if prompt_type not in PROMPT_TYPES:
+        raise HTTPException(status_code=422, detail="invalid prompt type")
+    (PROMPTS_DIR / f"{prompt_type}.txt").write_text(body.content, encoding="utf-8")
+    return {"ok": True, "type": prompt_type}
 
 
 @app.post("/internal/deploy-check")

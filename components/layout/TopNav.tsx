@@ -23,6 +23,9 @@ export function TopNav({ email }: TopNavProps) {
           <Link href="/metrics" className="text-gray-400 hover:text-white">
             Metrics
           </Link>
+          <Link href="/templates" className="text-gray-400 hover:text-white">
+            Templates
+          </Link>
         </nav>
       </div>
       <div className="flex items-center gap-4">
