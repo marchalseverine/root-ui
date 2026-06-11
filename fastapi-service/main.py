@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from starlette.requests import Request
 
 from _llm import get_model, stream_completion
+from deploy_check import run_deploy_check
 
 app = FastAPI(title="root-ui generation service")
 
@@ -43,6 +44,18 @@ class GenerateRequest(BaseModel):
     project_id: str
     prompt_language: str
     context: dict = {}
+
+
+class TaskStats(BaseModel):
+    total: int
+    checked: int
+
+
+class DeployCheckRequest(BaseModel):
+    task_stats: TaskStats
+    prd_approved: bool
+    spec_approved: bool
+    tasks_artifact_exists: bool
 
 
 def _load_prompt(artifact_type: str) -> str:
@@ -89,3 +102,14 @@ async def generate(req: GenerateRequest, authorization: str | None = Header(defa
         yield f"event: done\ndata: {done}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+@app.post("/internal/deploy-check")
+async def deploy_check(req: DeployCheckRequest) -> dict:
+    return run_deploy_check(
+        total=req.task_stats.total,
+        checked=req.task_stats.checked,
+        prd_approved=req.prd_approved,
+        spec_approved=req.spec_approved,
+        tasks_artifact_exists=req.tasks_artifact_exists,
+    )
