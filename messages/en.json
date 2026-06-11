@@ -1,0 +1,93 @@
+{
+  "dashboard": {
+    "title": "Projects",
+    "newProject": {
+      "button": "New project",
+      "title": "New project",
+      "nameLabel": "Project name",
+      "namePlaceholder": "My product",
+      "descriptionLabel": "Description",
+      "languageLabel": "Generation language",
+      "create": "Create",
+      "cancel": "Cancel"
+    },
+    "empty": {
+      "title": "No projects yet",
+      "description": "Create your first project to start the pipeline."
+    },
+    "card": {
+      "stage": "Stage",
+      "tasks": "{checked} / {total} tasks"
+    },
+    "filter": {
+      "active": "Active",
+      "archived": "Archived"
+    }
+  },
+  "pipeline": {
+    "stages": {
+      "1": "Brief",
+      "2": "PRD",
+      "3": "Spec",
+      "4": "Tasks",
+      "5": "Build",
+      "6": "Deploy"
+    },
+    "gate": {
+      "locked": "Locked",
+      "unlocked": "Unlocked"
+    }
+  },
+  "generation": {
+    "generate": "Generate {type}",
+    "regenerate": "Regenerate",
+    "streaming": {
+      "active": "Generating…",
+      "cancel": "Cancel generation"
+    },
+    "approve": "Approve",
+    "approved": "Approved",
+    "empty": "No content generated yet"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "progress": "{checked} / {total} done",
+    "empty": "No tasks yet",
+    "markDone": "Mark as done"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "submit": "Sign in",
+      "forgotPassword": "Forgot password?"
+    },
+    "signOut": "Sign out"
+  },
+  "errors": {
+    "generic": "Something went wrong.",
+    "unauthorized": "You must be signed in.",
+    "notFound": "Not found.",
+    "validation": "Please check the form.",
+    "network": "Network error. Please retry.",
+    "streamTimeout": "Generation timed out."
+  },
+  "demo": {
+    "banner": "You're viewing a read-only demo project."
+  },
+  "metrics": {
+    "title": "Metrics",
+    "projectsActive": "Active projects",
+    "tasksCompleted": "Tasks completed",
+    "completionPct": "Completion",
+    "generationRuns": "Generation runs",
+    "byStage": "Projects by stage"
+  },
+  "profile": {
+    "title": "Profile",
+    "email": "Email",
+    "language": "Interface language",
+    "save": "Save"
+  }
+}

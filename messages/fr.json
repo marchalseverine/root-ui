@@ -1,0 +1,93 @@
+{
+  "dashboard": {
+    "title": "Projets",
+    "newProject": {
+      "button": "Nouveau projet",
+      "title": "Nouveau projet",
+      "nameLabel": "Nom du projet",
+      "namePlaceholder": "Mon produit",
+      "descriptionLabel": "Description",
+      "languageLabel": "Langue de génération",
+      "create": "Créer",
+      "cancel": "Annuler"
+    },
+    "empty": {
+      "title": "Aucun projet pour l'instant",
+      "description": "Créez votre premier projet pour lancer le pipeline."
+    },
+    "card": {
+      "stage": "Étape",
+      "tasks": "{checked} / {total} tâches"
+    },
+    "filter": {
+      "active": "Actifs",
+      "archived": "Archivés"
+    }
+  },
+  "pipeline": {
+    "stages": {
+      "1": "Brief",
+      "2": "PRD",
+      "3": "Spéc",
+      "4": "Tâches",
+      "5": "Build",
+      "6": "Déploiement"
+    },
+    "gate": {
+      "locked": "Verrouillé",
+      "unlocked": "Déverrouillé"
+    }
+  },
+  "generation": {
+    "generate": "Générer {type}",
+    "regenerate": "Régénérer",
+    "streaming": {
+      "active": "Génération…",
+      "cancel": "Annuler la génération"
+    },
+    "approve": "Approuver",
+    "approved": "Approuvé",
+    "empty": "Aucun contenu généré pour l'instant"
+  },
+  "tasks": {
+    "title": "Tâches",
+    "progress": "{checked} / {total} faites",
+    "empty": "Aucune tâche pour l'instant",
+    "markDone": "Marquer comme faite"
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "emailLabel": "E-mail",
+      "passwordLabel": "Mot de passe",
+      "submit": "Se connecter",
+      "forgotPassword": "Mot de passe oublié ?"
+    },
+    "signOut": "Se déconnecter"
+  },
+  "errors": {
+    "generic": "Une erreur est survenue.",
+    "unauthorized": "Vous devez être connecté.",
+    "notFound": "Introuvable.",
+    "validation": "Veuillez vérifier le formulaire.",
+    "network": "Erreur réseau. Veuillez réessayer.",
+    "streamTimeout": "La génération a expiré."
+  },
+  "demo": {
+    "banner": "Vous consultez un projet de démonstration en lecture seule."
+  },
+  "metrics": {
+    "title": "Métriques",
+    "projectsActive": "Projets actifs",
+    "tasksCompleted": "Tâches terminées",
+    "completionPct": "Avancement",
+    "generationRuns": "Générations",
+    "byStage": "Projets par étape"
+  },
+  "profile": {
+    "title": "Profil",
+    "email": "E-mail",
+    "language": "Langue de l'interface",
+    "save": "Enregistrer"
+  }
+}

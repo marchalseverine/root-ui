@@ -1,0 +1,93 @@
+{
+  "dashboard": {
+    "title": "Proyectos",
+    "newProject": {
+      "button": "Nuevo proyecto",
+      "title": "Nuevo proyecto",
+      "nameLabel": "Nombre del proyecto",
+      "namePlaceholder": "Mi producto",
+      "descriptionLabel": "Descripción",
+      "languageLabel": "Idioma de generación",
+      "create": "Crear",
+      "cancel": "Cancelar"
+    },
+    "empty": {
+      "title": "Aún no hay proyectos",
+      "description": "Crea tu primer proyecto para iniciar el pipeline."
+    },
+    "card": {
+      "stage": "Etapa",
+      "tasks": "{checked} / {total} tareas"
+    },
+    "filter": {
+      "active": "Activos",
+      "archived": "Archivados"
+    }
+  },
+  "pipeline": {
+    "stages": {
+      "1": "Brief",
+      "2": "PRD",
+      "3": "Spec",
+      "4": "Tareas",
+      "5": "Build",
+      "6": "Despliegue"
+    },
+    "gate": {
+      "locked": "Bloqueado",
+      "unlocked": "Desbloqueado"
+    }
+  },
+  "generation": {
+    "generate": "Generar {type}",
+    "regenerate": "Regenerar",
+    "streaming": {
+      "active": "Generando…",
+      "cancel": "Cancelar generación"
+    },
+    "approve": "Aprobar",
+    "approved": "Aprobado",
+    "empty": "Aún no se ha generado contenido"
+  },
+  "tasks": {
+    "title": "Tareas",
+    "progress": "{checked} / {total} hechas",
+    "empty": "Aún no hay tareas",
+    "markDone": "Marcar como hecha"
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar sesión",
+      "emailLabel": "Correo electrónico",
+      "passwordLabel": "Contraseña",
+      "submit": "Iniciar sesión",
+      "forgotPassword": "¿Olvidaste tu contraseña?"
+    },
+    "signOut": "Cerrar sesión"
+  },
+  "errors": {
+    "generic": "Algo salió mal.",
+    "unauthorized": "Debes iniciar sesión.",
+    "notFound": "No encontrado.",
+    "validation": "Por favor revisa el formulario.",
+    "network": "Error de red. Inténtalo de nuevo.",
+    "streamTimeout": "La generación expiró."
+  },
+  "demo": {
+    "banner": "Estás viendo un proyecto de demostración de solo lectura."
+  },
+  "metrics": {
+    "title": "Métricas",
+    "projectsActive": "Proyectos activos",
+    "tasksCompleted": "Tareas completadas",
+    "completionPct": "Avance",
+    "generationRuns": "Generaciones",
+    "byStage": "Proyectos por etapa"
+  },
+  "profile": {
+    "title": "Perfil",
+    "email": "Correo electrónico",
+    "language": "Idioma de la interfaz",
+    "save": "Guardar"
+  }
+}
