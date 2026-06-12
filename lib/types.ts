@@ -34,9 +34,16 @@ export interface TaskStats {
   checked: number;
 }
 
+export type IterationSummary = Pick<
+  Iteration,
+  'id' | 'number' | 'change_request' | 'stage' | 'created_at'
+>;
+
 export interface ProjectDetail extends Project {
   latest_artifacts: Record<ArtifactType, ArtifactSummary | null>;
   task_stats: TaskStats;
+  current_iteration: Iteration | null;
+  iterations: IterationSummary[];
 }
 
 export interface Iteration {

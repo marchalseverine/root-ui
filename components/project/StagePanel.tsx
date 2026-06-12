@@ -6,7 +6,7 @@ import { Button, Card, Spinner } from '@/components/ui';
 import { apiFetch } from '@/lib/api/client';
 import { useStreamingGeneration } from '@/hooks/useStreamingGeneration';
 import { useTaskList } from '@/hooks/useTaskList';
-import type { ArtifactType, Project } from '@/lib/types';
+import type { ArtifactType, Iteration, Project } from '@/lib/types';
 import { StreamingOutput } from './StreamingOutput';
 import { BriefEditor } from './BriefEditor';
 import { PromptTemplateField } from './PromptTemplateField';
@@ -235,18 +235,33 @@ function DonePhase({ project }: { project: Project }) {
 
 export function StagePanel({
   project,
+  iteration,
   onAdvance,
 }: {
   project: Project;
+  iteration?: Iteration | null;
   onAdvance: () => void;
 }) {
-  if (!project.gate_prd)
+  if (!project.gate_prd) {
+    const isChangeRequest = (iteration?.number ?? 1) > 1;
     return (
       <div className="flex flex-col gap-6">
-        <BriefEditor project={project} onSaved={onAdvance} />
+        {isChangeRequest ? (
+          <Card className="flex flex-col gap-1">
+            <span className="font-body text-xs uppercase tracking-wide text-gray-400">
+              Change request (iteration {iteration?.number})
+            </span>
+            <p className="whitespace-pre-wrap font-mono text-sm text-white">
+              {iteration?.change_request}
+            </p>
+          </Card>
+        ) : (
+          <BriefEditor project={project} onSaved={onAdvance} />
+        )}
         <GenerationPhase project={project} type="prd" onAdvance={onAdvance} />
       </div>
     );
+  }
   if (!project.gate_spec)
     return <GenerationPhase project={project} type="spec" onAdvance={onAdvance} />;
   if (!project.gate_tasks)

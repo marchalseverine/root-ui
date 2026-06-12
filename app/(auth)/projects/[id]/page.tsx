@@ -8,6 +8,7 @@ import { Card, Spinner } from '@/components/ui';
 import { ProjectHeader } from '@/components/project/ProjectHeader';
 import { PipelineView } from '@/components/project/PipelineView';
 import { StagePanel } from '@/components/project/StagePanel';
+import { IterationsBar } from '@/components/project/IterationsBar';
 import { apiFetch } from '@/lib/api/client';
 import type { ProjectDetail } from '@/lib/types';
 
@@ -52,14 +53,25 @@ export default function ProjectPage() {
   return (
     <div className="flex flex-col gap-6">
       <ProjectHeader project={project} onUpdated={load} />
+      <IterationsBar
+        projectId={id}
+        iterations={project.iterations}
+        currentId={project.current_iteration?.id ?? null}
+        onChanged={load}
+      />
       <PipelineView project={project} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_240px]">
         <Card className="flex flex-col gap-4">
           <h2 className="font-heading text-lg text-white">
+            v{project.current_iteration?.number ?? 1} ·{' '}
             {tp(`stages.${project.stage}` as 'stages.1')}
           </h2>
-          <StagePanel project={project} onAdvance={load} />
+          <StagePanel
+            project={project}
+            iteration={project.current_iteration}
+            onAdvance={load}
+          />
         </Card>
 
         <aside className="flex flex-col gap-3">
