@@ -21,11 +21,13 @@ self.addEventListener('message', async (event: MessageEvent) => {
     if (!transcriber) {
       transcriber = (await pipeline(
         'automatic-speech-recognition',
-        'Xenova/whisper-base',
+        'Xenova/whisper-tiny',
         {
-          // The default q4 build fails in the WASM runtime (missing dequant
-          // scales). q8 is the stable quantization for Whisper in the browser.
-          dtype: 'q8',
+          // fp32 = no quantization at all, so the q4/NBits "missing scale"
+          // crash in the WASM runtime cannot happen. whisper-tiny keeps the
+          // (one-time) download small.
+          dtype: 'fp32',
+          device: 'wasm',
           progress_callback: (p: unknown) =>
             self.postMessage({ type: 'progress', data: p }),
         }
