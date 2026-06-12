@@ -1,6 +1,6 @@
 export type Locale = 'en' | 'fr' | 'es';
 export type ProjectStatus = 'active' | 'archived' | 'deleted';
-export type ArtifactType = 'prd' | 'spec' | 'tasks';
+export type ArtifactType = 'prd' | 'spec' | 'tasks' | 'tests';
 
 export interface Project {
   id: string;

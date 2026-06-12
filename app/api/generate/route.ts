@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentIteration, latestApprovedByType } from '@/lib/iterations';
 import { apiError, notFound, unauthorized } from '@/lib/api/http';
 
-const TYPES = ['prd', 'spec', 'tasks'] as const;
+const TYPES = ['prd', 'spec', 'tasks', 'tests'] as const;
 type GenType = (typeof TYPES)[number];
 
 interface SSEMessage {
@@ -56,6 +56,7 @@ export async function GET(request: Request) {
   const iteration = await getCurrentIteration(supabase, projectId);
   if (!iteration) return apiError('NO_ITERATION', 'Project has no iteration', 400);
 
+  // prd: stage>=1 · spec: prd approved · tasks & tests: spec approved.
   const ready =
     type === 'prd'
       ? iteration.stage >= 1

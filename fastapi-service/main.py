@@ -22,8 +22,8 @@ from deploy_check import run_deploy_check
 app = FastAPI(title="root-ui generation service")
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
-VALID_TYPES = {"prd", "spec", "tasks"}
-PROMPT_TYPES = ("prd", "spec", "tasks")
+VALID_TYPES = {"prd", "spec", "tasks", "tests"}
+PROMPT_TYPES = ("prd", "spec", "tasks", "tests")
 
 
 def _expected_auth() -> str | None:

@@ -49,10 +49,11 @@ export async function GET(
   const iteration = await getCurrentIteration(supabase, id);
 
   // Artifacts and tasks are scoped to the current iteration.
-  const latest_artifacts: Record<ArtifactType, unknown> = {
+  const latest_artifacts: Record<'prd' | 'spec' | 'tasks' | 'tests', unknown> = {
     prd: null,
     spec: null,
     tasks: null,
+    tests: null,
   };
   if (iteration) {
     for (const type of ARTIFACT_TYPES) {
@@ -67,6 +68,16 @@ export async function GET(
         .maybeSingle();
       latest_artifacts[type] = artifact ?? null;
     }
+    // Test plan: latest generated (not gated, so not required to be approved).
+    const { data: testsArtifact } = await supabase
+      .from('artifacts')
+      .select('id, content, approved_at, prompt_lang')
+      .eq('iteration_id', iteration.id)
+      .eq('type', 'tests')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    latest_artifacts.tests = testsArtifact ?? null;
   }
 
   const { count: total } = await supabase

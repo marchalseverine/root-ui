@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { apiError, unauthorized, validationError } from '@/lib/api/http';
 
 const PROMPTS_DIR = path.join(process.cwd(), 'fastapi-service', 'prompts');
-const TYPES = ['prd', 'spec', 'tasks'];
+const TYPES = ['prd', 'spec', 'tasks', 'tests'];
 const LOCALES = ['en', 'fr', 'es'];
 
 export async function PUT(

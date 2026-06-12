@@ -5,7 +5,7 @@ import { useLocale } from 'next-intl';
 import { Button, Card, Spinner } from '@/components/ui';
 import { apiFetch } from '@/lib/api/client';
 
-const TYPES = ['prd', 'spec', 'tasks'] as const;
+const TYPES = ['prd', 'spec', 'tasks', 'tests'] as const;
 type PromptType = (typeof TYPES)[number];
 
 function PromptEditor({

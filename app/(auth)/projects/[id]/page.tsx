@@ -9,6 +9,7 @@ import { ProjectHeader } from '@/components/project/ProjectHeader';
 import { PipelineView } from '@/components/project/PipelineView';
 import { StagePanel } from '@/components/project/StagePanel';
 import { IterationsBar } from '@/components/project/IterationsBar';
+import { TestPlanSection } from '@/components/project/TestPlanSection';
 import { apiFetch } from '@/lib/api/client';
 import type { ProjectDetail } from '@/lib/types';
 
@@ -116,6 +117,8 @@ export default function ProjectPage() {
           </Card>
         </aside>
       </div>
+
+      <TestPlanSection project={project} onChanged={load} />
     </div>
   );
 }

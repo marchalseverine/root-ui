@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { apiError, unauthorized } from '@/lib/api/http';
 
 const PROMPTS_DIR = path.join(process.cwd(), 'fastapi-service', 'prompts');
-const TYPES = ['prd', 'spec', 'tasks'] as const;
+const TYPES = ['prd', 'spec', 'tasks', 'tests'] as const;
 const LOCALES = ['en', 'fr', 'es'];
 
 function resolveLocale(url: string): string {
