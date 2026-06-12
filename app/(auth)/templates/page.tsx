@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useLocale } from 'next-intl';
 import { Button, Card, Spinner } from '@/components/ui';
 import { apiFetch } from '@/lib/api/client';
 
@@ -10,9 +11,11 @@ type PromptType = (typeof TYPES)[number];
 function PromptEditor({
   type,
   initial,
+  locale,
 }: {
   type: PromptType;
   initial: string;
+  locale: string;
 }) {
   const [value, setValue] = useState(initial);
   const [saving, setSaving] = useState(false);
@@ -24,7 +27,7 @@ function PromptEditor({
     setSaved(false);
     setError(null);
     try {
-      await apiFetch(`/api/prompts/${type}`, {
+      await apiFetch(`/api/prompts/${type}?locale=${locale}`, {
         method: 'PUT',
         body: JSON.stringify({ content: value }),
       });
@@ -60,22 +63,28 @@ function PromptEditor({
 }
 
 export default function TemplatesPage() {
+  const locale = useLocale();
   const [prompts, setPrompts] = useState<Record<PromptType, string> | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch<{ data: Record<PromptType, string> }>('/api/prompts')
+    setPrompts(null);
+    apiFetch<{ data: Record<PromptType, string> }>(
+      `/api/prompts?locale=${locale}`
+    )
       .then((r) => setPrompts(r.data))
       .catch((e) => setError(e instanceof Error ? e.message : 'Error'));
-  }, []);
+  }, [locale]);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="font-heading text-2xl text-white">Prompt templates</h1>
+        <h1 className="font-heading text-2xl text-white">
+          Prompt templates · {locale.toUpperCase()}
+        </h1>
         <p className="font-body text-sm text-gray-400">
-          System prompts that shape PRD / spec / tasks generation. Saved to the
-          generation service.
+          System prompts that shape PRD / spec / tasks generation, in the current
+          interface language. Switch language in the top nav to edit another set.
         </p>
       </div>
 
@@ -90,7 +99,12 @@ export default function TemplatesPage() {
       ) : (
         <div className="flex flex-col gap-6">
           {TYPES.map((t) => (
-            <PromptEditor key={t} type={t} initial={prompts[t] ?? ''} />
+            <PromptEditor
+              key={`${t}-${locale}`}
+              type={t}
+              initial={prompts[t] ?? ''}
+              locale={locale}
+            />
           ))}
         </div>
       )}

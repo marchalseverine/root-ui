@@ -6,26 +6,39 @@ import { apiError, unauthorized } from '@/lib/api/http';
 
 const PROMPTS_DIR = path.join(process.cwd(), 'fastapi-service', 'prompts');
 const TYPES = ['prd', 'spec', 'tasks'] as const;
+const LOCALES = ['en', 'fr', 'es'];
 
-// Read the generation prompt templates straight from disk (same files the
-// FastAPI service reads at generation time), so this screen works without the
-// generation service running.
-export async function GET() {
+function resolveLocale(url: string): string {
+  const requested = new URL(url).searchParams.get('locale');
+  return requested && LOCALES.includes(requested) ? requested : 'en';
+}
+
+// Read the per-language generation prompt templates straight from disk (the same
+// files FastAPI reads at generation time), so this works without the generation
+// service running. Falls back to the English template if a locale file is missing.
+export async function GET(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return unauthorized();
 
+  const locale = resolveLocale(request.url);
   try {
     const entries = await Promise.all(
       TYPES.map(async (t) => {
-        const file = path.join(PROMPTS_DIR, `${t}.txt`);
-        const content = await fs.readFile(file, 'utf-8').catch(() => '');
+        const localized = await fs
+          .readFile(path.join(PROMPTS_DIR, `${t}.${locale}.txt`), 'utf-8')
+          .catch(() => null);
+        const content =
+          localized ??
+          (await fs
+            .readFile(path.join(PROMPTS_DIR, `${t}.en.txt`), 'utf-8')
+            .catch(() => ''));
         return [t, content] as const;
       })
     );
-    return NextResponse.json({ data: Object.fromEntries(entries) });
+    return NextResponse.json({ data: Object.fromEntries(entries), locale });
   } catch (e) {
     return apiError(
       'PROMPTS_READ_FAILED',

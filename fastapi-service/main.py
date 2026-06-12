@@ -59,11 +59,13 @@ class DeployCheckRequest(BaseModel):
     tasks_artifact_exists: bool
 
 
-def _load_prompt(artifact_type: str) -> str:
-    path = PROMPTS_DIR / f"{artifact_type}.txt"
-    if not path.exists():
-        raise HTTPException(status_code=422, detail=f"Unknown type: {artifact_type}")
-    return path.read_text(encoding="utf-8")
+def _load_prompt(artifact_type: str, lang: str = "en") -> str:
+    # Prefer the requested language, fall back to English.
+    for candidate in (f"{artifact_type}.{lang}.txt", f"{artifact_type}.en.txt"):
+        path = PROMPTS_DIR / candidate
+        if path.exists():
+            return path.read_text(encoding="utf-8")
+    raise HTTPException(status_code=422, detail=f"Unknown type: {artifact_type}")
 
 
 def _build_user_prompt(req: GenerateRequest) -> str:
@@ -85,7 +87,7 @@ async def generate(req: GenerateRequest, authorization: str | None = Header(defa
     if req.type not in VALID_TYPES:
         raise HTTPException(status_code=422, detail="type must be prd, spec, or tasks")
 
-    system = _load_prompt(req.type)
+    system = _load_prompt(req.type, req.prompt_language)
     user = _build_user_prompt(req)
     model = get_model()
 
@@ -103,27 +105,6 @@ async def generate(req: GenerateRequest, authorization: str | None = Header(defa
         yield f"event: done\ndata: {done}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
-
-
-class PromptUpdate(BaseModel):
-    content: str
-
-
-@app.get("/internal/prompts")
-async def get_prompts() -> dict:
-    out: dict[str, str] = {}
-    for t in PROMPT_TYPES:
-        path = PROMPTS_DIR / f"{t}.txt"
-        out[t] = path.read_text(encoding="utf-8") if path.exists() else ""
-    return out
-
-
-@app.put("/internal/prompts/{prompt_type}")
-async def put_prompt(prompt_type: str, body: PromptUpdate) -> dict:
-    if prompt_type not in PROMPT_TYPES:
-        raise HTTPException(status_code=422, detail="invalid prompt type")
-    (PROMPTS_DIR / f"{prompt_type}.txt").write_text(body.content, encoding="utf-8")
-    return {"ok": True, "type": prompt_type}
 
 
 @app.post("/internal/deploy-check")

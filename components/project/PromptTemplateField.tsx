@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useLocale } from 'next-intl';
 import { Button } from '@/components/ui';
 import { apiFetch } from '@/lib/api/client';
 import type { ArtifactType } from '@/lib/types';
@@ -12,6 +13,7 @@ import type { ArtifactType } from '@/lib/types';
  * page edits.
  */
 export function PromptTemplateField({ type }: { type: ArtifactType }) {
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
   const [loaded, setLoaded] = useState(false);
@@ -20,18 +22,19 @@ export function PromptTemplateField({ type }: { type: ArtifactType }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch<{ data: Record<string, string> }>('/api/prompts')
+    setLoaded(false);
+    apiFetch<{ data: Record<string, string> }>(`/api/prompts?locale=${locale}`)
       .then((r) => setValue(r.data[type] ?? ''))
       .catch(() => setError('Could not load template'))
       .finally(() => setLoaded(true));
-  }, [type]);
+  }, [type, locale]);
 
   async function save() {
     setSaving(true);
     setSaved(false);
     setError(null);
     try {
-      await apiFetch(`/api/prompts/${type}`, {
+      await apiFetch(`/api/prompts/${type}?locale=${locale}`, {
         method: 'PUT',
         body: JSON.stringify({ content: value }),
       });
@@ -52,7 +55,9 @@ export function PromptTemplateField({ type }: { type: ArtifactType }) {
         className="flex w-full items-center gap-2 px-3 py-2 font-body text-xs uppercase tracking-wide text-gray-400 hover:text-white"
       >
         <span>{open ? '▾' : '▸'}</span>
-        <span>Prompt template ({type})</span>
+        <span>
+          Prompt template ({type} · {locale.toUpperCase()})
+        </span>
       </button>
       {open && (
         <div className="flex flex-col gap-2 border-t border-gray-200 p-3">

@@ -6,6 +6,7 @@ import { apiError, unauthorized, validationError } from '@/lib/api/http';
 
 const PROMPTS_DIR = path.join(process.cwd(), 'fastapi-service', 'prompts');
 const TYPES = ['prd', 'spec', 'tasks'];
+const LOCALES = ['en', 'fr', 'es'];
 
 export async function PUT(
   request: Request,
@@ -21,14 +22,21 @@ export async function PUT(
   if (!TYPES.includes(type)) {
     return validationError('type must be prd, spec, or tasks');
   }
+  const requested = new URL(request.url).searchParams.get('locale');
+  const locale = requested && LOCALES.includes(requested) ? requested : 'en';
+
   const body = (await request.json().catch(() => ({}))) as { content?: unknown };
   if (typeof body.content !== 'string') {
     return validationError('content must be a string', { content: 'required' });
   }
 
   try {
-    await fs.writeFile(path.join(PROMPTS_DIR, `${type}.txt`), body.content, 'utf-8');
-    return NextResponse.json({ data: { ok: true, type } });
+    await fs.writeFile(
+      path.join(PROMPTS_DIR, `${type}.${locale}.txt`),
+      body.content,
+      'utf-8'
+    );
+    return NextResponse.json({ data: { ok: true, type, locale } });
   } catch (e) {
     return apiError(
       'PROMPTS_WRITE_FAILED',
