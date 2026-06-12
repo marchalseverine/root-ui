@@ -83,6 +83,21 @@ export default function ProjectPage() {
               {project.task_stats.checked} / {project.task_stats.total}
             </p>
           </Card>
+          {project.import_source && (
+            <Card className="flex flex-col gap-1">
+              <p className="font-body text-xs uppercase tracking-wide text-gray-400">
+                Codebase
+              </p>
+              <p
+                className="truncate font-mono text-xs text-coral"
+                title={project.import_source}
+              >
+                {project.import_source.startsWith('github:')
+                  ? '⎇ ' + project.import_source.slice(7)
+                  : '⌂ ' + project.import_source.slice(6)}
+              </p>
+            </Card>
+          )}
           <Card className="flex flex-col gap-1">
             <p className="font-body text-xs uppercase tracking-wide text-gray-400">
               Artifacts

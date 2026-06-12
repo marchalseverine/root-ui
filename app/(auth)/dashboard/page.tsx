@@ -6,6 +6,7 @@ import { Button, Spinner } from '@/components/ui';
 import { ProjectCard } from '@/components/dashboard/ProjectCard';
 import { EmptyState } from '@/components/dashboard/EmptyState';
 import { NewProjectModal } from '@/components/dashboard/NewProjectModal';
+import { ImportProjectModal } from '@/components/dashboard/ImportProjectModal';
 import { apiFetch } from '@/lib/api/client';
 import type { Project, ProjectStatus } from '@/lib/types';
 
@@ -18,6 +19,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const load = useCallback(async (status: Filter) => {
     setLoading(true);
@@ -42,9 +44,14 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="font-heading text-2xl text-white">{t('title')}</h1>
-        <Button onClick={() => setModalOpen(true)}>
-          {t('newProject.button')}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="ghost" onClick={() => setImportOpen(true)}>
+            Import
+          </Button>
+          <Button onClick={() => setModalOpen(true)}>
+            {t('newProject.button')}
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-2" role="tablist">
@@ -87,6 +94,10 @@ export default function DashboardPage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onCreated={() => load(filter)}
+      />
+      <ImportProjectModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
       />
     </div>
   );

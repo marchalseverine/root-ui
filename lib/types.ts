@@ -18,6 +18,7 @@ export interface Project {
   last_deploy_check_at: string | null;
   last_deploy_check_passed: boolean | null;
   last_deploy_check_detail: unknown;
+  import_source: string | null;
   created_at: string;
   updated_at: string;
 }

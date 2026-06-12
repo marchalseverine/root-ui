@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getCurrentIteration, latestApprovedByType } from '@/lib/iterations';
 import { apiError, notFound, unauthorized } from '@/lib/api/http';
 
 const TYPES = ['prd', 'spec', 'tasks'] as const;
@@ -47,26 +48,29 @@ export async function GET(request: Request) {
   // Pre-flight: project must exist (RLS hides others' / deleted).
   const { data: project } = await supabase
     .from('projects')
-    .select('id, name, description, stage, gate_prd, gate_spec, prompt_language')
+    .select('id, name, description, prompt_language')
     .eq('id', projectId)
     .maybeSingle();
   if (!project) return notFound('Project not found');
 
+  const iteration = await getCurrentIteration(supabase, projectId);
+  if (!iteration) return apiError('NO_ITERATION', 'Project has no iteration', 400);
+
   const ready =
     type === 'prd'
-      ? project.stage >= 1
+      ? iteration.stage >= 1
       : type === 'spec'
-        ? project.gate_prd
-        : project.gate_spec;
+        ? iteration.gate_prd
+        : iteration.gate_spec;
   if (!ready) {
     return apiError('INVALID_STAGE', `Cannot generate ${type} yet`, 400);
   }
 
-  // Pre-flight: no active run for this project+type.
+  // Pre-flight: no active run for this iteration+type.
   const { data: active } = await supabase
     .from('generation_runs')
     .select('id')
-    .eq('project_id', projectId)
+    .eq('iteration_id', iteration.id)
     .eq('type', type)
     .in('status', ['pending', 'streaming'])
     .limit(1)
@@ -83,7 +87,12 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
   const { data: run, error: runErr } = await admin
     .from('generation_runs')
-    .insert({ project_id: projectId, type, status: 'streaming' })
+    .insert({
+      project_id: projectId,
+      iteration_id: iteration.id,
+      type,
+      status: 'streaming',
+    })
     .select('id')
     .single();
   if (runErr || !run) {
@@ -91,17 +100,41 @@ export async function GET(request: Request) {
   }
   const runId = run.id as string;
 
-  // Context = approved upstream artifacts.
-  const { data: approved } = await supabase
-    .from('artifacts')
-    .select('type, content')
-    .eq('project_id', projectId)
-    .eq('approved', true);
+  // Context: project identity + this iteration's brief/change request +
+  // the product's current approved artifacts (so a change request builds on
+  // what already exists). For iteration 1, change_request is the initial brief.
   const context: Record<string, string> = {};
-  // The stage-1 brief (project name + description) seeds PRD generation.
   if (project.name) context.project_name = project.name;
-  if (project.description) context.brief = project.description;
-  for (const a of approved ?? []) context[a.type] = a.content;
+  context.brief = iteration.change_request ?? project.description ?? '';
+  if (iteration.number > 1) {
+    context.iteration = String(iteration.number);
+    context.change_request = iteration.change_request ?? '';
+    context.note =
+      'This is a change request on an existing product. Integrate the requested ' +
+      'features into the current artifacts below; keep what exists and mark what is new.';
+  }
+  const approved = await latestApprovedByType(supabase, projectId);
+  for (const [t, content] of Object.entries(approved)) context[t] = content;
+
+  // If the project was imported from a real codebase, ground generation in it.
+  const { data: snapshot } = await supabase
+    .from('codebase_snapshots')
+    .select('summary, digest')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (snapshot) {
+    context.codebase = String(snapshot.summary || snapshot.digest || '').slice(
+      0,
+      100_000
+    );
+    context.note =
+      (context.note ? context.note + ' ' : '') +
+      'A digest of the existing codebase is provided in `codebase`. Ground your ' +
+      'output in the real code (existing structure, stack, modules); do not ' +
+      'contradict or duplicate what already exists.';
+  }
 
   const fastapiUrl = process.env.FASTAPI_BASE_URL ?? 'http://localhost:8000';
   const secret = process.env.INTERNAL_API_SECRET;
@@ -189,6 +222,7 @@ export async function GET(request: Request) {
           .from('artifacts')
           .insert({
             project_id: projectId,
+            iteration_id: iteration.id,
             type,
             content,
             prompt_lang: project.prompt_language,
