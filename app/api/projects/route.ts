@@ -34,8 +34,28 @@ export async function GET(request: Request) {
 
   if (error) return apiError('QUERY_FAILED', error.message, 500);
 
+  // Overlay each project's stage/gates from its current iteration.
+  const projects = data ?? [];
+  const iterationIds = projects
+    .map((p) => p.current_iteration_id)
+    .filter((id): id is string => !!id);
+  const iterById: Record<string, { stage: number }> = {};
+  if (iterationIds.length > 0) {
+    const { data: iters } = await supabase
+      .from('iterations')
+      .select('id, stage')
+      .in('id', iterationIds);
+    for (const it of iters ?? []) iterById[it.id] = { stage: it.stage };
+  }
+  const withStage = projects.map((p) => ({
+    ...p,
+    stage: p.current_iteration_id
+      ? (iterById[p.current_iteration_id]?.stage ?? p.stage)
+      : p.stage,
+  }));
+
   return NextResponse.json({
-    data: data ?? [],
+    data: withStage,
     pagination: { page, limit, total: count ?? 0 },
   });
 }
@@ -88,5 +108,23 @@ export async function POST(request: Request) {
   if (error || !data) {
     return apiError('INSERT_FAILED', error?.message ?? 'Insert failed', 500);
   }
-  return NextResponse.json({ data }, { status: 201 });
+
+  // Every project starts with iteration #1 (the initial build from the brief).
+  const { data: iteration, error: itErr } = await supabase
+    .from('iterations')
+    .insert({ project_id: data.id, number: 1, change_request: description })
+    .select('id')
+    .single();
+  if (itErr || !iteration) {
+    return apiError('INSERT_FAILED', itErr?.message ?? 'Insert failed', 500);
+  }
+  await supabase
+    .from('projects')
+    .update({ current_iteration_id: iteration.id })
+    .eq('id', data.id);
+
+  return NextResponse.json(
+    { data: { ...data, current_iteration_id: iteration.id } },
+    { status: 201 }
+  );
 }

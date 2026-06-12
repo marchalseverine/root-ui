@@ -29,20 +29,26 @@ export async function PATCH(
   // RLS hides tasks of non-owned projects, so a missing task -> 404.
   const { data: task } = await supabase
     .from('tasks')
-    .select('id, project_id')
+    .select('id, project_id, iteration_id')
     .eq('id', taskId)
     .maybeSingle();
   if (!task) return notFound('Task not found');
 
   const { data: project } = await supabase
     .from('projects')
-    .select('id, is_demo, gate_build')
+    .select('id, is_demo')
     .eq('id', task.project_id)
     .maybeSingle();
   if (!project) return notFound('Task not found');
   if (project.is_demo) {
     return apiError('DEMO_PROJECT', 'Demo project tasks are read-only', 403);
   }
+
+  const { data: iteration } = await supabase
+    .from('iterations')
+    .select('id, gate_build')
+    .eq('id', task.iteration_id)
+    .maybeSingle();
 
   const { data: updated, error } = await supabase
     .from('tasks')
@@ -54,24 +60,25 @@ export async function PATCH(
     return apiError('UPDATE_FAILED', error?.message ?? 'Update failed', 500);
   }
 
+  // Counts are within the task's iteration.
   const { count: total } = await supabase
     .from('tasks')
     .select('*', { count: 'exact', head: true })
-    .eq('project_id', task.project_id);
+    .eq('iteration_id', task.iteration_id);
   const { count: checkedCount } = await supabase
     .from('tasks')
     .select('*', { count: 'exact', head: true })
-    .eq('project_id', task.project_id)
+    .eq('iteration_id', task.iteration_id)
     .eq('checked', true);
 
-  // gate_build is forward-only: set true when every task is checked; never
-  // reverts once set (per spec — Sévi advances via the deploy check, not here).
-  let gate_build = project.gate_build;
+  // gate_build is forward-only on the iteration: set true when every task is
+  // checked; never reverts once set.
+  let gate_build = iteration?.gate_build ?? false;
   if (!gate_build && (total ?? 0) > 0 && checkedCount === total) {
     await supabase
-      .from('projects')
+      .from('iterations')
       .update({ gate_build: true })
-      .eq('id', task.project_id);
+      .eq('id', task.iteration_id);
     gate_build = true;
   }
 

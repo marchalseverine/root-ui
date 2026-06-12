@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getCurrentIteration } from '@/lib/iterations';
 import { apiError, notFound, ok, unauthorized } from '@/lib/api/http';
 
 interface DeployCheckResult {
@@ -25,25 +26,28 @@ export async function POST(
     .maybeSingle();
   if (!project) return notFound('Project not found');
 
-  if (!project.gate_build) {
+  const iteration = await getCurrentIteration(supabase, id);
+  if (!iteration) return apiError('NO_ITERATION', 'Project has no iteration', 400);
+
+  if (!iteration.gate_build) {
     return apiError('BUILD_NOT_COMPLETE', 'All tasks must be checked first', 400);
   }
 
   const { count: total } = await supabase
     .from('tasks')
     .select('*', { count: 'exact', head: true })
-    .eq('project_id', id);
+    .eq('iteration_id', iteration.id);
   const { count: checked } = await supabase
     .from('tasks')
     .select('*', { count: 'exact', head: true })
-    .eq('project_id', id)
+    .eq('iteration_id', iteration.id)
     .eq('checked', true);
 
   const payload = {
     task_stats: { total: total ?? 0, checked: checked ?? 0 },
-    prd_approved: project.gate_prd,
-    spec_approved: project.gate_spec,
-    tasks_artifact_exists: project.gate_tasks,
+    prd_approved: iteration.gate_prd,
+    spec_approved: iteration.gate_spec,
+    tasks_artifact_exists: iteration.gate_tasks,
   };
 
   const fastapiUrl = process.env.FASTAPI_BASE_URL ?? 'http://localhost:8000';
@@ -67,27 +71,27 @@ export async function POST(
   const checkedAt = new Date().toISOString();
   const detail = { checks: result.checks, summary: result.summary };
 
-  const update: Record<string, unknown> = {
-    last_deploy_check_at: checkedAt,
-    last_deploy_check_passed: result.passed,
-    last_deploy_check_detail: detail,
-  };
-  if (result.passed) {
-    update.gate_deploy = true;
-    update.stage = 6;
-  }
-
-  const { data: updated } = await supabase
+  // Cache the result on the project; advance the gate/stage on the iteration.
+  await supabase
     .from('projects')
-    .update(update)
-    .eq('id', id)
-    .select('*')
-    .maybeSingle();
+    .update({
+      last_deploy_check_at: checkedAt,
+      last_deploy_check_passed: result.passed,
+      last_deploy_check_detail: detail,
+    })
+    .eq('id', id);
+
+  if (result.passed) {
+    await supabase
+      .from('iterations')
+      .update({ gate_deploy: true, stage: 6 })
+      .eq('id', iteration.id);
+  }
 
   return ok({
     passed: result.passed,
     checked_at: checkedAt,
     detail,
-    project: updated ?? project,
+    project,
   });
 }

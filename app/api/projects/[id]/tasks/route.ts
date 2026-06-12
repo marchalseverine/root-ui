@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getCurrentIteration } from '@/lib/iterations';
 import { apiError, notFound, unauthorized } from '@/lib/api/http';
 
 export async function GET(
@@ -21,10 +22,12 @@ export async function GET(
     .maybeSingle();
   if (!project) return notFound('Project not found');
 
+  const iteration = await getCurrentIteration(supabase, id);
+
   const { data, error } = await supabase
     .from('tasks')
     .select('*')
-    .eq('project_id', id)
+    .eq('iteration_id', iteration?.id ?? '')
     .order('position', { ascending: true });
   if (error) return apiError('QUERY_FAILED', error.message, 500);
 

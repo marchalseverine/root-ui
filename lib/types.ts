@@ -39,6 +39,22 @@ export interface ProjectDetail extends Project {
   task_stats: TaskStats;
 }
 
+export interface Iteration {
+  id: string;
+  project_id: string;
+  number: number;
+  change_request: string | null;
+  stage: number;
+  gate_prd: boolean;
+  gate_spec: boolean;
+  gate_tasks: boolean;
+  gate_build: boolean;
+  gate_deploy: boolean;
+  status: 'active' | 'archived';
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Task {
   id: string;
   project_id: string;

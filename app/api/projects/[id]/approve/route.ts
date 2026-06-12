@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
+import { getCurrentIteration } from '@/lib/iterations';
 import { apiError, notFound, ok, unauthorized } from '@/lib/api/http';
 import { parseTasksFromMarkdown } from '@/lib/tasks/parser';
+import type { Iteration } from '@/lib/types';
 
 const TYPES = ['prd', 'spec', 'tasks'] as const;
 type ArtifactType = (typeof TYPES)[number];
@@ -8,18 +10,10 @@ type ArtifactType = (typeof TYPES)[number];
 // Target stage after approving each artifact type.
 const TARGET_STAGE: Record<ArtifactType, number> = { prd: 2, spec: 3, tasks: 4 };
 
-interface Project {
-  id: string;
-  stage: number;
-  gate_prd: boolean;
-  gate_spec: boolean;
-  gate_tasks: boolean;
-}
-
-function readiness(type: ArtifactType, p: Project): boolean {
-  if (type === 'prd') return p.stage >= 1 && !p.gate_prd;
-  if (type === 'spec') return p.gate_prd && !p.gate_spec;
-  return p.gate_spec && !p.gate_tasks; // tasks
+function readiness(type: ArtifactType, it: Iteration): boolean {
+  if (type === 'prd') return it.stage >= 1 && !it.gate_prd;
+  if (type === 'spec') return it.gate_prd && !it.gate_spec;
+  return it.gate_spec && !it.gate_tasks; // tasks
 }
 
 export async function POST(
@@ -41,12 +35,15 @@ export async function POST(
 
   const { data: project } = await supabase
     .from('projects')
-    .select('id, stage, gate_prd, gate_spec, gate_tasks')
+    .select('id')
     .eq('id', id)
     .maybeSingle();
   if (!project) return notFound('Project not found');
 
-  if (!readiness(type, project as Project)) {
+  const iteration = await getCurrentIteration(supabase, id);
+  if (!iteration) return apiError('NO_ITERATION', 'Project has no iteration', 400);
+
+  if (!readiness(type, iteration)) {
     return apiError(
       'INVALID_STAGE',
       `Cannot approve ${type} at the current stage`,
@@ -54,11 +51,11 @@ export async function POST(
     );
   }
 
-  // Latest unapproved artifact of this type.
+  // Latest unapproved artifact of this type in the current iteration.
   const { data: artifact } = await supabase
     .from('artifacts')
     .select('id, content')
-    .eq('project_id', id)
+    .eq('iteration_id', iteration.id)
     .eq('type', type)
     .eq('approved', false)
     .order('created_at', { ascending: false })
@@ -86,11 +83,12 @@ export async function POST(
     return apiError('APPROVE_FAILED', approveErr.message, 409);
   }
 
-  // Replace tasks when approving a tasks artifact.
+  // Replace this iteration's tasks when approving a tasks artifact.
   if (type === 'tasks' && parsed) {
-    await supabase.from('tasks').delete().eq('project_id', id);
+    await supabase.from('tasks').delete().eq('iteration_id', iteration.id);
     const rows = parsed.tasks.map((t, i) => ({
       project_id: id,
+      iteration_id: iteration.id,
       artifact_id: artifact.id,
       position: i + 1,
       label: t.label,
@@ -101,18 +99,18 @@ export async function POST(
     if (insertErr) return apiError('TASK_INSERT_FAILED', insertErr.message, 500);
   }
 
-  // Advance the gate + stage.
-  const { data: updated, error: projErr } = await supabase
-    .from('projects')
+  // Advance the gate + stage on the current iteration.
+  const { data: updated, error: itErr } = await supabase
+    .from('iterations')
     .update({
       [`gate_${type}`]: true,
-      stage: Math.max(project.stage, TARGET_STAGE[type]),
+      stage: Math.max(iteration.stage, TARGET_STAGE[type]),
     })
-    .eq('id', id)
+    .eq('id', iteration.id)
     .select('*')
     .single();
-  if (projErr || !updated) {
-    return apiError('UPDATE_FAILED', projErr?.message ?? 'Update failed', 500);
+  if (itErr || !updated) {
+    return apiError('UPDATE_FAILED', itErr?.message ?? 'Update failed', 500);
   }
 
   return ok({ ...updated, artifact_id: artifact.id });
