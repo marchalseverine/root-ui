@@ -29,17 +29,81 @@ export default function MeetingsPage() {
   // Assume supported during SSR/first render to avoid a hydration mismatch;
   // detect for real after mount.
   const [speechSupported, setSpeechSupported] = useState(true);
+  const [transcribing, setTranscribing] = useState(false);
+  const [progress, setProgress] = useState('');
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamsRef = useRef<MediaStream[]>([]);
+  const recordingBlobRef = useRef<Blob | null>(null);
+  const workerRef = useRef<Worker | null>(null);
 
   useEffect(() => {
     setSpeechSupported(
       !!(window.SpeechRecognition || window.webkitSpeechRecognition)
     );
+    return () => workerRef.current?.terminate();
   }, []);
+
+  async function decodeTo16kMono(blob: Blob): Promise<Float32Array> {
+    const buffer = await blob.arrayBuffer();
+    const ctx = new AudioContext({ sampleRate: 16000 });
+    const audioBuffer = await ctx.decodeAudioData(buffer);
+    let data: Float32Array;
+    if (audioBuffer.numberOfChannels === 1) {
+      data = audioBuffer.getChannelData(0);
+    } else {
+      const a = audioBuffer.getChannelData(0);
+      const b = audioBuffer.getChannelData(1);
+      data = new Float32Array(a.length);
+      for (let i = 0; i < a.length; i++) data[i] = (a[i] + b[i]) / 2;
+    }
+    await ctx.close();
+    return data;
+  }
+
+  async function transcribeRecording() {
+    const blob = recordingBlobRef.current;
+    if (!blob) return;
+    setTranscribing(true);
+    setError(null);
+    setProgress('Preparing…');
+    try {
+      const audio = await decodeTo16kMono(blob);
+      if (!workerRef.current) {
+        workerRef.current = new Worker(
+          new URL('../../../lib/whisper/worker.ts', import.meta.url)
+        );
+      }
+      const worker = workerRef.current;
+      worker.onmessage = (e: MessageEvent) => {
+        const msg = e.data;
+        if (msg.type === 'progress') {
+          const d = msg.data;
+          if (d?.status === 'progress' && d?.file) {
+            setProgress(`Downloading model: ${d.file} ${Math.round(d.progress ?? 0)}%`);
+          } else if (d?.status === 'ready') {
+            setProgress('Transcribing…');
+          }
+        } else if (msg.type === 'done') {
+          setTranscript((msg.text ?? '').trim());
+          setTranscribing(false);
+          setProgress('');
+        } else if (msg.type === 'error') {
+          setError(msg.message);
+          setTranscribing(false);
+          setProgress('');
+        }
+      };
+      setProgress('Loading model (first run downloads ~80 MB)…');
+      worker.postMessage({ audio, language: locale }, [audio.buffer]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Transcription failed');
+      setTranscribing(false);
+      setProgress('');
+    }
+  }
 
   async function start() {
     setError(null);
@@ -64,6 +128,7 @@ export default function MeetingsPage() {
       mr.onstop = () => {
         const type = chunksRef.current[0]?.type || 'video/webm';
         const blob = new Blob(chunksRef.current, { type });
+        recordingBlobRef.current = blob;
         setRecordingUrl(URL.createObjectURL(blob));
       };
       mr.start();
@@ -195,14 +260,26 @@ export default function MeetingsPage() {
         )}
 
         {recordingUrl && (
-          <div className="flex items-center gap-3">
-            <a
-              href={recordingUrl}
-              download={`${title || 'meeting'}.webm`}
-              className="font-body text-sm text-coral hover:underline"
-            >
-              ↓ Download recording
-            </a>
+          <div className="flex flex-col gap-2 border-t border-gray-200 pt-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <Button onClick={transcribeRecording} disabled={transcribing}>
+                {transcribing ? 'Transcribing…' : 'Transcribe recording (local Whisper)'}
+              </Button>
+              <a
+                href={recordingUrl}
+                download={`${title || 'meeting'}.webm`}
+                className="font-body text-sm text-coral hover:underline"
+              >
+                ↓ Download recording
+              </a>
+            </div>
+            {transcribing && (
+              <span className="font-mono text-xs text-gray-400">{progress}</span>
+            )}
+            <span className="font-body text-xs text-gray-400">
+              Transcribes the full recording (all voices) locally — no key, no
+              upload. First run downloads the model.
+            </span>
           </div>
         )}
       </Card>
