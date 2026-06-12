@@ -23,6 +23,9 @@ self.addEventListener('message', async (event: MessageEvent) => {
         'automatic-speech-recognition',
         'Xenova/whisper-base',
         {
+          // The default q4 build fails in the WASM runtime (missing dequant
+          // scales). q8 is the stable quantization for Whisper in the browser.
+          dtype: 'q8',
           progress_callback: (p: unknown) =>
             self.postMessage({ type: 'progress', data: p }),
         }
