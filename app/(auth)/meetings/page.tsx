@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { Badge, Button, Card, Input } from '@/components/ui';
@@ -26,15 +26,20 @@ export default function MeetingsPage() {
   const [title, setTitle] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Assume supported during SSR/first render to avoid a hydration mismatch;
+  // detect for real after mount.
+  const [speechSupported, setSpeechSupported] = useState(true);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamsRef = useRef<MediaStream[]>([]);
 
-  const speechSupported =
-    typeof window !== 'undefined' &&
-    !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  useEffect(() => {
+    setSpeechSupported(
+      !!(window.SpeechRecognition || window.webkitSpeechRecognition)
+    );
+  }, []);
 
   async function start() {
     setError(null);
