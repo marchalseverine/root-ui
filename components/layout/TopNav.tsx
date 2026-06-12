@@ -20,6 +20,9 @@ export function TopNav({ email }: TopNavProps) {
           <Link href="/dashboard" className="text-gray-400 hover:text-white">
             Dashboard
           </Link>
+          <Link href="/meetings" className="text-gray-400 hover:text-white">
+            Meetings
+          </Link>
           <Link href="/metrics" className="text-gray-400 hover:text-white">
             Metrics
           </Link>
